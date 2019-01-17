@@ -1,0 +1,52 @@
+const fs = require("fs");
+const path = "./messages";
+
+
+module.exports = {
+    data: [],
+    /** Read data from files in array on startup**/
+    init: (data, callback) =>{
+        fs.readdir(path, (err, files) => {                              //read the contents of a directory
+            if (err) throw err;                                         //error read contents of directory
+
+            let cntr=0;
+            files.forEach(file => { //loop
+                fs.readFile(`${path}/${file}`, "utf8", (err, res) => {  //read data from each file
+                    if (err) throw err;                                 //error read data from file
+
+                    data.push(JSON.parse(res));                         //add data from file to array
+                    ++cntr;
+                    if (cntr === files.length) {                        //check count of files
+                        callback();
+                    }
+                });
+            });
+        });
+    },
+    checkMessage: (data, callback) => {
+        const answer= {
+            "code": 200,
+            "error": "NO"
+        };
+        if(!data.author){
+            answer.code = 400;
+            answer.error = "Author must be present";
+        }
+        if(!data.message){
+            answer.code = 400;
+            answer.error = "Message must be present";
+        }
+        return callback(answer);
+
+    },
+    /** add data to array**/
+    addItem: (data, item) => data.push(item),                           //add new data to array
+    /** save data to file **/
+    saveData: (data, callback) => {
+        let dateTimeNow = new Date().toISOString();                     //get current  date and time
+        fs.writeFile(`${path}/${dateTimeNow}.txt`, JSON.stringify(data), err =>{ //write data to file
+            if(err) throw err;                                          //error writing data to file
+            callback();
+        })
+    }
+};
