@@ -16,11 +16,12 @@ const port = 8000;
 
 app.use("/messages", messages);
 
+app.use(express.static('public'));
 
 // Handle 404 - Keep this as a last route
 app.use(function(req, res) {
     res.status(404);
-    res.send(JSON.parse('{"404": "File Not Found"}'));
+    res.send(JSON.parse('{"Error": "File Not Found"}'));
 });
 
 app.listen(port,() =>{

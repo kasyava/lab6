@@ -49,7 +49,6 @@ router.get('/all', (req, res) =>{
 
 /** POST request on /messages **/
 router.post('/', (req, res) =>{
-
     fsDemo.checkMessage(req.body,(answer) =>{
        if (answer.code ===400) {
 

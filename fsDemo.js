@@ -28,14 +28,15 @@ module.exports = {
             "code": 200,
             "error": "NO"
         };
-        if(!data.author){
-            answer.code = 400;
-            answer.error = "Author must be present";
-        }
         if(!data.message){
             answer.code = 400;
             answer.error = "Message must be present";
         }
+        if(!data.author){
+            answer.code = 400;
+            answer.error = "Author must be present";
+        }
+
         return callback(answer);
 
     },
