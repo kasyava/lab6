@@ -2,34 +2,31 @@
 let lastDate='';        //тут будет лежать дата последнего сообщения
 let globalArray = [];   //а тут будут лежать сообщения
 
-let msgList;
-let errorMsg;
+let msgList, errorMsg, author, textMessage; //переменные для объектов jquery
 
 // jquery on document ready то есть когда документ загружен
 $(function(){
 
     msgList = $('#msgList');
     errorMsg = $('#errorMsg');
+    author = $('#author');
+    textMessage = $('#textMessage');
 
     //при нажатии на кнопку отправляем постом данные на сервер
     $('#btnSendMessage').click(() => {
-        sendAjax("POST",{ "author": $('#author').val(), "message": $('#textMessage').val()})
-            .then(responce =>{
+        sendAjax("POST",{ "author": author.val(), "message": textMessage.val()})
+            .then((responce) =>{
                 errorMsg.empty(); //очищаем вывод ошибки у пользователя
                 //fillArray([responce]); //закоментировал чтобы показать, что работает setInterval
             });
     });
 
-    //получаем последние 30 сообщений
-    sendAjax().then((responce) =>{
-            fillArray(responce); //заполняем массив с сообщениями
-        });
+    //получаем последние 30 сообщений и заполняем массив с сообщениями
+    sendAjax().then(responce => fillArray(responce));
 
     // каждые 2 секунды запрашиваем с сервера сообщения новее нашего последнего
     setInterval(()=>{
-        sendAjax("GET",'datetime='+lastDate).then((responce) =>{
-                fillArray(responce);
-            });
+        sendAjax("GET",'datetime='+lastDate).then(responce => fillArray(responce));
     },2000);
 });
 
@@ -41,9 +38,7 @@ let fillArray = (data) =>{
             if (globalArray.length >= 30) {                                     //если наш маасив имеет длинну в 30 сообщений
                 globalArray.push.apply(globalArray, globalArray.splice(0,1));   //сдвигаем все элементы на 1 влево
                 globalArray[globalArray.length-1] = data[i];                    //и в последний элемент сохраняем новые данные
-            } else {                                                            //если размер массива меньше 30
-                globalArray.push(data[i]);                                      //то просто добавляем в него новый элемент
-            }
+            } else globalArray.push(data[i]);                                   //если размер массива меньше 30, то просто добавляем в него новый элемент
         }
         lastDate = globalArray[globalArray.length-1].datetime;                  //тут будет лежать дата последнего сообщения
     }
@@ -55,13 +50,11 @@ let printMessage = (data) =>{
     let list = '<ul class="border">';
     data.forEach((element) => {
         list += '<ul>';
-        //lastDate = element.datetime;
         let myDate = element.datetime.split('T')[0];
         let myTime = element.datetime.split('T')[1].split('.')[0];
         list += '<li style="color:red">' + "Author:" + element.author + " " + "&nbsp;Date: " + myDate + "&nbsp;Time: "+ myTime + '</li>';
         list += '<li style="color:green">' + element.message + '</li>';
         list += '</ul>';
-
     });
     list += '</ul>';
 
@@ -88,4 +81,3 @@ let sendAjax=(type='GET', data='')=> {
         }
     );
 };
-
