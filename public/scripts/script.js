@@ -1,51 +1,56 @@
 
-let lastDate='';
-let globalArray = [];
+let lastDate='';        //тут будет лежать дата последнего сообщения
+let globalArray = [];   //а тут будут лежать сообщения
 
+let msgList;
+let errorMsg;
 
+// jquery on document ready то есть когда документ загружен
 $(function(){
-    $('#btnSendMessage').click(() => {
 
-        sendNewMessage({ "author": $('#author').val(), "message": $('#textMessage').val()})
+    msgList = $('#msgList');
+    errorMsg = $('#errorMsg');
+
+    //при нажатии на кнопку отправляем постом данные на сервер
+    $('#btnSendMessage').click(() => {
+        sendAjax("POST",{ "author": $('#author').val(), "message": $('#textMessage').val()})
             .then(responce =>{
-                fillArray([responce]);
+                errorMsg.empty(); //очищаем вывод ошибки у пользователя
+                //fillArray([responce]); //закоментировал чтобы показать, что работает setInterval
             });
     });
 
-    getMessages()
-        .then((responce) =>{
-            fillArray(responce);
+    //получаем последние 30 сообщений
+    sendAjax().then((responce) =>{
+            fillArray(responce); //заполняем массив с сообщениями
         });
 
+    // каждые 2 секунды запрашиваем с сервера сообщения новее нашего последнего
     setInterval(()=>{
-        getMessages('datetime='+lastDate)
-            .then((responce) =>{
+        sendAjax("GET",'datetime='+lastDate).then((responce) =>{
                 fillArray(responce);
             });
     },2000);
 });
 
-
+//функция заполнения маасива сообщениями
 let fillArray = (data) =>{
-
-    console.log(data);
     if(data.length) {
         for (let i = 0; i < data.length; i++) {
 
-            if (globalArray.length >= 30) {
-                globalArray.push.apply(globalArray, globalArray.splice(0,1));
-                globalArray[globalArray.length-1] = data[i];
-            } else {
-                globalArray.push(data[i]);
+            if (globalArray.length >= 30) {                                     //если наш маасив имеет длинну в 30 сообщений
+                globalArray.push.apply(globalArray, globalArray.splice(0,1));   //сдвигаем все элементы на 1 влево
+                globalArray[globalArray.length-1] = data[i];                    //и в последний элемент сохраняем новые данные
+            } else {                                                            //если размер массива меньше 30
+                globalArray.push(data[i]);                                      //то просто добавляем в него новый элемент
             }
         }
-        lastDate = globalArray[globalArray.length-1].datetime;
+        lastDate = globalArray[globalArray.length-1].datetime;                  //тут будет лежать дата последнего сообщения
     }
-
-    printMessage(globalArray);
-
+    printMessage(globalArray);                                                  //выводим наш массив на страницу
 };
 
+//функция вывода массива на экран пользователю
 let printMessage = (data) =>{
     let list = '<ul class="border">';
     data.forEach((element) => {
@@ -60,31 +65,12 @@ let printMessage = (data) =>{
     });
     list += '</ul>';
 
-    $('#msgList').empty();
-    $('#msgList').html(list);
+    msgList.empty();      //очищаем наш div с сообщениями
+    msgList.html(list);   //и выводим новые сообщения
 };
 
-let getMessages =(data = '') =>{
-    return $.ajax(
-        {
-            headers: {
-                "Content-Type":"application/json",
-                "Accept":"application/json"
-            },
-            url: '/messages/',
-            type: "GET",
-            data: data,
-            dataType: 'json',
-            error: function (err) {
-                $('#errorMsg').html(err.responseJSON.error);
-            }
-        }
-    );
-};
-
-
-let sendNewMessage=(data)=> {
-    $('#errorMsg').empty();
+let sendAjax=(type='GET', data='')=> {
+    if(type==='POST') data = JSON.stringify(data);
     return $.ajax(
         {
             headers: {
@@ -92,13 +78,14 @@ let sendNewMessage=(data)=> {
                 "Accept":"application/json"
             },
             url: '/messages',
-            type: "POST",
-            data: JSON.stringify(data),
+            type: type,
+            data: data,
             dataType: 'json',
 
             error: function(err) {
-                $('#errorMsg').html(err.responseJSON.error);
+                errorMsg.html(err.responseJSON.error);
             }
         }
     );
 };
+
